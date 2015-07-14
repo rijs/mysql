@@ -4,9 +4,9 @@ var expect = require('chai').expect
   , client = require('utilise/client')
   , resdir = require('./')
   , path = require('path')
-  , core = require('core')
-  , css = require('css')
-  , fn = require('fn')
+  , core = require('rijs.core')
+  , css = require('rijs.css')
+  , fn = require('rijs.fn')
  
 describe('Resources Folder', function(){
 

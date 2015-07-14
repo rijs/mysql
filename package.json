@@ -1,5 +1,5 @@
 {
-  "name": "mysqlr",
+  "name": "rijs.mysql",
   "version": "0.0.0",
   "main": "dist",
   "browser": "./node_modules/utilise/identity.js",
@@ -22,7 +22,10 @@
     "istanbul": "^0.3.13",
     "mocha": "^2.2.4",
     "mocha-lcov-reporter": "0.0.2",
-    "uglify-js": "^2.4.16"
+    "uglify-js": "^2.4.16",
+    "rijs.core": "git://github.com/rijs/core",
+    "rijs.css": "git://github.com/rijs/css",
+    "rijs.fn": "git://github.com/rijs/fn"
   },
   "dependencies": {
     "mysql": "^2.7.0",
