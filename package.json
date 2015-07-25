@@ -26,8 +26,7 @@
     "uglify-js": "^2.4.16",
     "rijs.core": "git://github.com/rijs/core",
     "rijs.css": "git://github.com/rijs/css",
-    "rijs.fn": "git://github.com/rijs/fn",
-    "popper": "*"
+    "rijs.fn": "git://github.com/rijs/fn"
   },
   "dependencies": {
     "mysql": "^2.7.0",
