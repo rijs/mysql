@@ -8,8 +8,9 @@
     "ignore": "find ./dist -type f -exec sed -i \"s/var _interopRequire/\\/* istanbul ignore next *\\/\\nvar _interopRequire/g\" {} ;",
     "babel": "babel src -d dist",
     "bundle": "browserify ./ -o dist/client.js",
+    "clean": "rm -rf dist && mkdir dist",
     "minify": "uglifyjs dist/client.js -m -c drop_console,dead_code -d debug=false -o dist/client.min.js",
-    "build": "npm run babel && npm run ignore && npm run bundle && npm run minify",
+    "build": "npm run clean && npm run babel && npm run ignore && npm run bundle && npm run minify",
     "test": "istanbul test ./node_modules/mocha/bin/_mocha --report html -- -R spec",
     "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && rm -rf ./coverage"
   },
@@ -25,7 +26,8 @@
     "uglify-js": "^2.4.16",
     "rijs.core": "git://github.com/rijs/core",
     "rijs.css": "git://github.com/rijs/css",
-    "rijs.fn": "git://github.com/rijs/fn"
+    "rijs.fn": "git://github.com/rijs/fn",
+    "popper": "*"
   },
   "dependencies": {
     "mysql": "^2.7.0",
