@@ -24,12 +24,12 @@
     "mocha": "^2.2.4",
     "mocha-lcov-reporter": "0.0.2",
     "uglify-js": "^2.4.16",
-    "rijs.core": "git://github.com/rijs/core",
-    "rijs.css": "git://github.com/rijs/css",
-    "rijs.fn": "git://github.com/rijs/fn"
+    "rijs.core": "*",
+    "rijs.css": "*",
+    "rijs.fn": "*"
   },
   "dependencies": {
     "mysql": "^2.7.0",
-    "utilise": "git://github.com/utilise/utilise"
+    "utilise": "*"
   }
 }
