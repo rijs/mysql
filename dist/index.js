@@ -47,7 +47,8 @@ function exec(type) {
         con.query(sql, function (e, rows) {
           if (e) return err(type, table, "failed", e);
           log(type.green.bold, table, "done", rows.insertId ? str(rows.insertId).grey : "");
-          p.resolve(rows.insertId ? value.id = rows.insertId : "");
+
+          rows.insertId ? p.resolve(value.id = rows.insertId) : p.resolve();
         });
 
         return p;
