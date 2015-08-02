@@ -5,14 +5,16 @@
   "browser": "./node_modules/utilise/identity.js",
   "author": "Pedram Emrouznejad (https://github.com/pemrouz)",
   "scripts": {
-    "ignore": "find ./dist -type f -exec sed -i \"s/var _interopRequire/\\/* istanbul ignore next *\\/\\nvar _interopRequire/g\" {} ;",
+    "ignore:1": "find ./dist -type f -exec sed -i \"s/var _interopRequire/\\/* istanbul ignore next *\\/\\nvar _interopRequire/g\" {} ;",
+    "ignore:2": "find ./dist -type f -exec sed -i \"s/if (client)/\\/* istanbul ignore next *\\/\\nif (client)/g\" {} ;",
     "babel": "babel src -d dist",
     "bundle": "browserify ./ -o dist/client.js",
     "clean": "rm -rf dist && mkdir dist",
     "minify": "uglifyjs dist/client.js -m -c drop_console,dead_code -d debug=false -o dist/client.min.js",
-    "build": "npm run clean && npm run babel && npm run ignore && npm run bundle && npm run minify",
+    "build": "npm run clean && npm run babel && npm run ignore:1 && npm run ignore:2 && npm run bundle && npm run minify",
     "test": "istanbul test ./node_modules/mocha/bin/_mocha --report html -- -R spec",
-    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && rm -rf ./coverage"
+    "coverage": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && rm -rf ./coverage",
+    "cov": "istanbul cover ./node_modules/mocha/bin/_mocha -- -R spec"
   },
   "license": "pemrouz.mit-license.org",
   "devDependencies": {
@@ -23,10 +25,11 @@
     "istanbul": "^0.3.13",
     "mocha": "^2.2.4",
     "mocha-lcov-reporter": "0.0.2",
-    "uglify-js": "^2.4.16",
+    "mockery": "^1.4.0",
     "rijs.core": "*",
-    "rijs.css": "*",
-    "rijs.fn": "*"
+    "rijs.data": "0.0.1",
+    "rijs.db": "0.0.1",
+    "uglify-js": "^2.4.16"
   },
   "dependencies": {
     "mysql": "^2.7.0",

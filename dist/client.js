@@ -2,6 +2,4 @@
 module.exports = function identity(d) {
   return d
 }
-},{}],2:[function(require,module,exports){
-module.exports = require('identity')
-},{"identity":1}]},{},[2]);
+},{}]},{},[1]);
