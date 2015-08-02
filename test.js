@@ -65,7 +65,7 @@ describe('MySQL', function(){
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'push' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("INSERT INTO foo (name) VALUES ('foo');")
+    expect(sql).to.eql("INSERT INTO foo (name) VALUES (foo);")
     fn(null, { insertId: 7 })
     expect(ripple('foo')).to.eql([ { name: 'foo', id: 7 } ])
   })
@@ -82,7 +82,7 @@ describe('MySQL', function(){
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'update' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("UPDATE foo SET name='foo' WHERE id = 7;")
+    expect(sql).to.eql("UPDATE foo SET name=foo WHERE id = 7;")
     fn(null, {})
     expect(ripple('foo')).to.eql([ { name: 'foo', id: 7 } ])
   })

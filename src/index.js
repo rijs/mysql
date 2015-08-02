@@ -82,8 +82,6 @@ var sqls = {
       .keys(body)
       .filter(not(is('id')))
       .map(value(body))
-      .map(prepend("'"))
-      .map(append("'"))
       .join(',')
     )
     log(template.grey)
@@ -119,13 +117,11 @@ function value(arr) {
 
 function kvpair(arr) {
   return function(key){
-    return key+"='"+escape(arr[key])+"'"
+    return key+"="+escape(arr[key])
   }
 }
 
 import promise from 'utilise/promise'
-import prepend from 'utilise/prepend'
-import append from 'utilise/append'
 import header from 'utilise/header'
 import client from 'utilise/client'
 import key from 'utilise/key'

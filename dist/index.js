@@ -82,7 +82,7 @@ var sqls = {
     var template = "INSERT INTO {table} ({keys}) VALUES ({values});";
     template = template.replace("{table}", name);
     template = template.replace("{keys}", Object.keys(body).filter(not(is("id"))).join(","));
-    template = template.replace("{values}", Object.keys(body).filter(not(is("id"))).map(value(body)).map(prepend("'")).map(append("'")).join(","));
+    template = template.replace("{values}", Object.keys(body).filter(not(is("id"))).map(value(body)).join(","));
     log(template.grey);
     return template;
   },
@@ -111,15 +111,11 @@ function value(arr) {
 
 function kvpair(arr) {
   return function (key) {
-    return key + "='" + escape(arr[key]) + "'";
+    return key + "=" + escape(arr[key]);
   };
 }
 
 var promise = _interopRequire(require("utilise/promise"));
-
-var prepend = _interopRequire(require("utilise/prepend"));
-
-var append = _interopRequire(require("utilise/append"));
 
 var header = _interopRequire(require("utilise/header"));
 
