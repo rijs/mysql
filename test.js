@@ -45,8 +45,8 @@ describe('MySQL', function(){
     var ripple = mysql(db(data(core())))
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [1,2,3])
-    expect(sql).to.be.eql('SHOW TABLES LIKE "foo"')
-    fn(null, ['foo'])
+    expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     expect(ripple.resources.foo.headers.table).to.be.eql('foo')
     expect(sql).to.be.eql('SELECT * FROM foo')
     fn(null, [1,2,3,4])
@@ -59,7 +59,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
     ripple('foo').push(record)
     var res = ripple.resources.foo
@@ -76,7 +76,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [record])
     ripple('foo')[0].name = 'foo'
     var res = ripple.resources.foo
@@ -93,7 +93,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [record])
     ripple('foo').pop()
     var res = ripple.resources.foo
@@ -110,7 +110,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, [])
+    fn({ code: 'ER_NO_SUCH_TABLE' })
     expect(ripple.resources.foo.headers.table === '').to.be.ok
     sql = ''
 
@@ -128,7 +128,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
     ripple('foo').push(record)
     var res = ripple.resources.foo
@@ -145,7 +145,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
     sql = ''
     ripple('foo').push(record)
@@ -162,7 +162,7 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
     ripple('foo').push(record)
     var res = ripple.resources.foo
@@ -189,9 +189,27 @@ describe('MySQL', function(){
 
     ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
-    fn(null, ['foo'])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn('err', [])
     expect(ripple('foo')).to.eql([])
+  })
+
+  it('should skip props if not in db', function(){  
+    var ripple = mysql(db(data(core())))
+      , record = { id: 7 }
+
+    ripple.db('mysql://user:password@host:port/database')
+    ripple('foo', [])
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
+    fn(null, [record])
+    ripple('foo')[0].name = 'foo'
+    ripple('foo')[0].baz = 'baz'
+    var res = ripple.resources.foo
+      , change = { key: 0, value: record, type: 'update' }
+    ripple.emit("change", [res, change])
+    expect(sql).to.eql("UPDATE foo SET name=foo WHERE id = 7;")
+    fn(null, {})
+    expect(ripple('foo')).to.eql([ { name: 'foo', baz: 'baz', id: 7 } ])
   })
 
 })

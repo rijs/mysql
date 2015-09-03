@@ -35,14 +35,13 @@ function init(ripple) {
 function exec(type) {
   return function (con) {
     return function (ripple) {
-      return function (res, key, value) {
+      return function (res, index, value) {
         var p = promise(),
             table = header("table")(res);
 
         if (!table) return;
         if (!is.obj(value)) return;
-
-        var sql = sqls[type](table, value);
+        var sql = sqls[type](table, key(res.headers.fields)(value));
 
         con.query(sql, function (e, rows) {
           if (e) return err(type, table, "failed", e);
@@ -63,9 +62,10 @@ function load(con) {
       var p = promise(),
           table = header("table")(res) || res.name;
 
-      con.query("SHOW TABLES LIKE \"" + table + "\"", function (e, rows) {
+      con.query("SHOW COLUMNS FROM " + table, function (e, rows) {
+        if (e && e.code == "ER_NO_SUCH_TABLE") return (log("no table", table), key("headers.table", "")(res));
         if (e) return err(table, e);
-        if (!rows.length) return (log("no table", table), key("headers.table", "")(res));
+        key("headers.fields", rows.map(key("Field")))(res);
         key("headers.table", table)(res);
 
         con.query("SELECT * FROM " + table, function (e, rows) {
@@ -88,6 +88,7 @@ var sqls = {
     return template;
   },
   update: function update(name, body) {
+    // TODO This should produe a minimal statement via diff
     var template = "UPDATE {table} SET {kvpairs} WHERE id = {id};";
     template = template.replace("{table}", name);
     template = template.replace("{id}", body.id);
