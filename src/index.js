@@ -5,6 +5,7 @@ export default function mysql(ripple){
   log('creating')
   
   if (client) return identity
+  strip(ripple.types['application/data'])
   ripple.db.adaptors.mysql = init(ripple)
   return ripple
 }
@@ -125,9 +126,21 @@ function kvpair(arr) {
   }
 }
 
+function strip(type){
+  type.to = proxy(type.to || identity, ({ name, body, headers }) => { 
+    return {
+      name
+    , body
+    , headers: key(['content-type', 'cache'])(headers)
+    } 
+  })
+}
+
+import identity from 'utilise/identity'
 import promise from 'utilise/promise'
 import header from 'utilise/header'
 import client from 'utilise/client'
+import proxy from 'utilise/proxy'
 import key from 'utilise/key'
 import log from 'utilise/log'
 import err from 'utilise/err'

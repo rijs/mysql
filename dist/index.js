@@ -14,7 +14,8 @@ function mysql(ripple) {
   /* istanbul ignore next */
 if (client) {
     return identity;
-  }ripple.db.adaptors.mysql = init(ripple);
+  }strip(ripple.types["application/data"]);
+  ripple.db.adaptors.mysql = init(ripple);
   return ripple;
 }
 
@@ -117,11 +118,29 @@ function kvpair(arr) {
   };
 }
 
+function strip(type) {
+  type.to = proxy(type.to || identity, function (_ref) {
+    var name = _ref.name;
+    var body = _ref.body;
+    var headers = _ref.headers;
+
+    return {
+      name: name,
+      body: body,
+      headers: key(["content-type", "cache"])(headers)
+    };
+  });
+}
+
+var identity = _interopRequire(require("utilise/identity"));
+
 var promise = _interopRequire(require("utilise/promise"));
 
 var header = _interopRequire(require("utilise/header"));
 
 var client = _interopRequire(require("utilise/client"));
+
+var proxy = _interopRequire(require("utilise/proxy"));
 
 var key = _interopRequire(require("utilise/key"));
 
