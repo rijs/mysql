@@ -15,7 +15,7 @@ function mysql(ripple) {
 if (client) {
     return identity;
   }strip(ripple.types["application/data"]);
-  ripple.db.adaptors.mysql = init(ripple);
+  key("adaptors.mysql", wrap(init(ripple)))(ripple);
   return ripple;
 }
 
@@ -141,6 +141,8 @@ var header = _interopRequire(require("utilise/header"));
 var client = _interopRequire(require("utilise/client"));
 
 var proxy = _interopRequire(require("utilise/proxy"));
+
+var wrap = _interopRequire(require("utilise/wrap"));
 
 var key = _interopRequire(require("utilise/key"));
 

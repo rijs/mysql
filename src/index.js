@@ -6,7 +6,7 @@ export default function mysql(ripple){
   
   if (client) return identity
   strip(ripple.types['application/data'])
-  ripple.db.adaptors.mysql = init(ripple)
+  key('adaptors.mysql', wrap(init(ripple)))(ripple)
   return ripple
 }
 
@@ -52,7 +52,7 @@ function exec(type) {
 
 function load(con){
   return (ripple) => {
-    return (res) => {
+    return (res) => { 
       var p = promise(), table = header('table')(res) || res.name
       
       con.query(`SHOW COLUMNS FROM ${table}`, function(e, rows) {
@@ -141,6 +141,7 @@ import promise from 'utilise/promise'
 import header from 'utilise/header'
 import client from 'utilise/client'
 import proxy from 'utilise/proxy'
+import wrap from 'utilise/wrap'
 import key from 'utilise/key'
 import log from 'utilise/log'
 import err from 'utilise/err'

@@ -32,18 +32,16 @@ describe('MySQL', function(){
   })
 
   it('should create connection hooks', function(){  
-    var ripple = mysql(db(data(core())))
-    ripple.db('mysql://user:password@host:port/database')
-    expect(ripple.db.connections.length).to.be.eql(1)
-    expect(ripple.db.connections[0].push).to.be.a('function')
-    expect(ripple.db.connections[0].update).to.be.a('function')
-    expect(ripple.db.connections[0].remove).to.be.a('function')
-    expect(ripple.db.connections[0].load).to.be.a('function')
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
+    expect(ripple.connections.length).to.be.eql(1)
+    expect(ripple.connections[0].push).to.be.a('function')
+    expect(ripple.connections[0].update).to.be.a('function')
+    expect(ripple.connections[0].remove).to.be.a('function')
+    expect(ripple.connections[0].load).to.be.a('function')
   })
 
   it('should create correct load SQL and behaviour', function(){  
-    var ripple = mysql(db(data(core())))
-    ripple.db('mysql://user:password@host:port/database')
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
     ripple('foo', [1,2,3])
     expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
@@ -54,10 +52,9 @@ describe('MySQL', function(){
   })
 
   it('should create correct insert SQL and behaviour', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { name: 'foo' }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
@@ -71,10 +68,9 @@ describe('MySQL', function(){
   })
 
   it('should create correct update SQL and behaviour', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { id: 7 }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [record])
@@ -88,10 +84,9 @@ describe('MySQL', function(){
   })
 
   it('should create correct remove SQL and behaviour', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { id: 7 }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [record])
@@ -105,10 +100,9 @@ describe('MySQL', function(){
   })
 
   it('should skip if resource not linked to table', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { name: 'foo' }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn({ code: 'ER_NO_SUCH_TABLE' })
     expect(ripple.resources.foo.headers.table === '').to.be.ok
@@ -123,10 +117,9 @@ describe('MySQL', function(){
   })
 
   it('should create correct insert SQL and behaviour', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { name: 'foo' }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
@@ -140,10 +133,9 @@ describe('MySQL', function(){
   })
 
   it('should not do anything with non-objects', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = 'foo'
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
@@ -157,10 +149,9 @@ describe('MySQL', function(){
   })
 
   it('should deal with mysql errors (crud)', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { name: 'foo' }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [])
@@ -174,20 +165,18 @@ describe('MySQL', function(){
   })
 
   it('should deal with mysql errors (show table)', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { name: 'foo' }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn('err')
     expect(ripple('foo')).to.eql([])
   })
 
   it('should deal with mysql errors (select table)', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { name: 'foo' }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn('err', [])
@@ -195,10 +184,9 @@ describe('MySQL', function(){
   })
 
   it('should skip props if not in db', function(){  
-    var ripple = mysql(db(data(core())))
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
       , record = { id: 7 }
 
-    ripple.db('mysql://user:password@host:port/database')
     ripple('foo', [])
     fn(null, [{ Field: 'name' }, { Field: 'id' }])
     fn(null, [record])
