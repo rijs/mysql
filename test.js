@@ -1,10 +1,10 @@
 !(require('utilise/client')) && !function(){
 
 var expect = require('chai').expect
-  , mysql = require('./')
-  , core = require('rijs.core')
-  , data = require('rijs.data')
-  , db = require('rijs.db')
+  , mysql = require('./').default
+  , core = require('rijs.core').default
+  , data = require('rijs.data').default
+  , db = require('rijs.db').default
   , mockery = require('mockery')
   , identity = require('utilise/identity')
   , sql, fn
@@ -198,6 +198,25 @@ describe('MySQL', function(){
     expect(sql).to.eql("UPDATE foo SET name=foo WHERE id = 7;")
     fn(null, {})
     expect(ripple('foo')).to.eql([ { name: 'foo', baz: 'baz', id: 7 } ])
+  })
+
+  it('should strip mysql headers before sending', function(){ 
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
+    ripple('foo', [1,2,3])
+    expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
+    fn(null, [{ Field: 'name' }, { Field: 'id' }])
+    expect(ripple.resources.foo.headers.table).to.be.eql('foo')
+    expect(ripple.resources.foo.headers.fields).to.be.eql(['name', 'id'])
+    expect(sql).to.be.eql('SELECT * FROM foo')
+    fn(null, [1,2,3,4])
+    expect(ripple('foo')).to.be.eql([1,2,3,4])
+
+    expect('fields' in ripple.resources.foo.headers).to.be.ok
+    expect('table' in ripple.resources.foo.headers).to.be.ok
+
+    var headers = ripple.types['application/data'].to(ripple.resources.foo).headers
+    expect('fields' in headers).to.not.be.ok
+    expect('table' in headers).to.not.be.ok
   })
 
 })

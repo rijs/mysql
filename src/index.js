@@ -3,8 +3,6 @@
 // -------------------------------------------
 export default function mysql(ripple){
   log('creating')
-  
-  if (client) return identity
   strip(ripple.types['application/data'])
   key('adaptors.mysql', wrap(init(ripple)))(ripple)
   return ripple
@@ -85,7 +83,7 @@ var sqls = {
     template = template.replace('{values}', Object
       .keys(body)
       .filter(not(is('id')))
-      .map(value(body))
+      .map(from(body))
       .join(',')
     )
     log(template.grey)
@@ -114,12 +112,6 @@ var sqls = {
   }
 }
 
-function value(arr) {
-  return function(key){
-    return escape(arr[key])
-  }
-}
-
 function kvpair(arr) {
   return function(key){
     return key+"="+escape(arr[key])
@@ -127,27 +119,34 @@ function kvpair(arr) {
 }
 
 function strip(type){
-  type.to = proxy(type.to || identity, ({ name, body, headers }) => { 
+  type.to = proxy(type.to, ({ name, body, headers }) => { 
+    var stripped = {}
+
+    keys(headers)
+      .filter(not(is('fields')))
+      .filter(not(is('table')))
+      .map(header => stripped[header] = headers[header])
+
     return {
       name
     , body
-    , headers: key(['content-type', 'cache'])(headers)
+    , headers: stripped
     } 
   })
 }
 
+import { default as from } from 'utilise/from'
 import identity from 'utilise/identity'
 import promise from 'utilise/promise'
 import header from 'utilise/header'
 import client from 'utilise/client'
 import proxy from 'utilise/proxy'
 import wrap from 'utilise/wrap'
+import keys from 'utilise/keys'
 import key from 'utilise/key'
-import log from 'utilise/log'
-import err from 'utilise/err'
 import not from 'utilise/not'
 import str from 'utilise/str'
 import is from 'utilise/is'
-log = log('[ri/mysql]')
-err = err('[ri/mysql]')
-var escape
+var log = require('utilise/log')('[ri/mysql]')
+  , err = require('utilise/err')('[ri/mysql]')
+  , escape
