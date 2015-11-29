@@ -6,8 +6,7 @@ var expect = require('chai').expect
   , data = require('rijs.data').default
   , db = require('rijs.db').default
   , mockery = require('mockery')
-  , identity = require('utilise/identity')
-  , sql, fn
+  , sql, next
 
 describe('MySQL', function(){
 
@@ -16,8 +15,8 @@ describe('MySQL', function(){
     mockery.registerMock('mysql', { 
       createPool: function(){ 
         return { 
-          escape: identity
-        , query: function(a, b){ fn = b; console.log('sql', sql = a) }
+          escape: function(d){ return "'" + d + "'" }
+        , query: function(d, fn){ next = fn; console.log('sql', sql = d) }
         }
       }
     })
@@ -44,10 +43,10 @@ describe('MySQL', function(){
     var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
     ripple('foo', [1,2,3])
     expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
     expect(ripple.resources.foo.headers.table).to.be.eql('foo')
     expect(sql).to.be.eql('SELECT * FROM foo')
-    fn(null, [1,2,3,4])
+    next(null, [1,2,3,4])
     expect(ripple('foo')).to.be.eql([1,2,3,4])
   })
 
@@ -56,14 +55,14 @@ describe('MySQL', function(){
       , record = { name: 'foo' }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [])
     ripple('foo').push(record)
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'push' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("INSERT INTO foo (name) VALUES (foo);")
-    fn(null, { insertId: 7 })
+    expect(sql).to.eql("INSERT INTO foo (`name`) VALUES ('foo');")
+    next(null, { insertId: 7 })
     expect(ripple('foo')).to.eql([ { name: 'foo', id: 7 } ])
   })
 
@@ -72,14 +71,14 @@ describe('MySQL', function(){
       , record = { id: 7 }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [record])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [record])
     ripple('foo')[0].name = 'foo'
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'update' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("UPDATE foo SET name=foo WHERE id = 7;")
-    fn(null, {})
+    expect(sql).to.eql("UPDATE foo SET `name`='foo' WHERE id = 7;")
+    next(null, {})
     expect(ripple('foo')).to.eql([ { name: 'foo', id: 7 } ])
   })
 
@@ -88,14 +87,14 @@ describe('MySQL', function(){
       , record = { id: 7 }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [record])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [record])
     ripple('foo').pop()
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'remove' }
     ripple.emit("change", [res, change])
     expect(sql).to.eql("DELETE FROM foo WHERE id = 7;")
-    fn(null, {})
+    next(null, {})
     expect(ripple('foo')).to.eql([])
   })
 
@@ -104,7 +103,7 @@ describe('MySQL', function(){
       , record = { name: 'foo' }
 
     ripple('foo', [])
-    fn({ code: 'ER_NO_SUCH_TABLE' })
+    next({ code: 'ER_NO_SUCH_TABLE' })
     expect(ripple.resources.foo.headers.table === '').to.be.ok
     sql = ''
 
@@ -121,14 +120,14 @@ describe('MySQL', function(){
       , record = { name: 'foo' }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [])
     ripple('foo').push(record)
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'push' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("INSERT INTO foo (name) VALUES (foo);")
-    fn(null, { insertId: 7 })
+    expect(sql).to.eql("INSERT INTO foo (`name`) VALUES ('foo');")
+    next(null, { insertId: 7 })
     expect(ripple('foo')).to.eql([ { name: 'foo', id: 7 } ])
   })
 
@@ -137,8 +136,8 @@ describe('MySQL', function(){
       , record = 'foo'
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [])
     sql = ''
     ripple('foo').push(record)
     var res = ripple.resources.foo
@@ -153,14 +152,14 @@ describe('MySQL', function(){
       , record = { name: 'foo' }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [])
     ripple('foo').push(record)
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'push' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("INSERT INTO foo (name) VALUES (foo);")
-    fn('err')
+    expect(sql).to.eql("INSERT INTO foo (`name`) VALUES ('foo');")
+    next('err')
     expect(ripple('foo')).to.eql([ { name: 'foo' } ])
   })
 
@@ -169,7 +168,7 @@ describe('MySQL', function(){
       , record = { name: 'foo' }
 
     ripple('foo', [])
-    fn('err')
+    next('err')
     expect(ripple('foo')).to.eql([])
   })
 
@@ -178,8 +177,8 @@ describe('MySQL', function(){
       , record = { name: 'foo' }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn('err', [])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next('err', [])
     expect(ripple('foo')).to.eql([])
   })
 
@@ -188,15 +187,15 @@ describe('MySQL', function(){
       , record = { id: 7 }
 
     ripple('foo', [])
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
-    fn(null, [record])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [record])
     ripple('foo')[0].name = 'foo'
     ripple('foo')[0].baz = 'baz'
     var res = ripple.resources.foo
       , change = { key: 0, value: record, type: 'update' }
     ripple.emit("change", [res, change])
-    expect(sql).to.eql("UPDATE foo SET name=foo WHERE id = 7;")
-    fn(null, {})
+    expect(sql).to.eql("UPDATE foo SET `name`='foo' WHERE id = 7;")
+    next(null, {})
     expect(ripple('foo')).to.eql([ { name: 'foo', baz: 'baz', id: 7 } ])
   })
 
@@ -204,11 +203,11 @@ describe('MySQL', function(){
     var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
     ripple('foo', [1,2,3])
     expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
-    fn(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
     expect(ripple.resources.foo.headers.table).to.be.eql('foo')
     expect(ripple.resources.foo.headers.fields).to.be.eql(['name', 'id'])
     expect(sql).to.be.eql('SELECT * FROM foo')
-    fn(null, [1,2,3,4])
+    next(null, [1,2,3,4])
     expect(ripple('foo')).to.be.eql([1,2,3,4])
 
     expect('fields' in ripple.resources.foo.headers).to.be.ok

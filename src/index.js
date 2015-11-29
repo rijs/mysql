@@ -75,15 +75,16 @@ var sqls = {
   push: function(name, body) {
     var template = 'INSERT INTO {table} ({keys}) VALUES ({values});'
     template = template.replace('{table}', name)
-    template = template.replace('{keys}', Object
-      .keys(body)
+    template = template.replace('{keys}', keys(body)
       .filter(not(is('id')))
+      .map(prepend('`'))
+      .map(append('`'))
       .join(',')
     )
-    template = template.replace('{values}', Object
-      .keys(body)
+    template = template.replace('{values}', keys(body)
       .filter(not(is('id')))
       .map(from(body))
+      .map(escape)
       .join(',')
     )
     log(template.grey)
@@ -94,8 +95,7 @@ var sqls = {
     var template = 'UPDATE {table} SET {kvpairs} WHERE id = {id};'
     template = template.replace('{table}', name)
     template = template.replace('{id}', body['id'])
-    template = template.replace('{kvpairs}', Object
-      .keys(body)
+    template = template.replace('{kvpairs}', keys(body)
       .filter(not(is('id')))
       .map(kvpair(body))
       .join(',')
@@ -113,9 +113,7 @@ var sqls = {
 }
 
 function kvpair(arr) {
-  return function(key){
-    return key+"="+escape(arr[key])
-  }
+  return key => '`' + key + "`=" + escape(arr[key])
 }
 
 function strip(type){
@@ -138,6 +136,8 @@ function strip(type){
 import { default as from } from 'utilise/from'
 import identity from 'utilise/identity'
 import promise from 'utilise/promise'
+import prepend from 'utilise/prepend'
+import append from 'utilise/append'
 import header from 'utilise/header'
 import client from 'utilise/client'
 import proxy from 'utilise/proxy'

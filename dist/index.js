@@ -17,6 +17,14 @@ var _promise = require('utilise/promise');
 
 var _promise2 = _interopRequireDefault(_promise);
 
+var _prepend = require('utilise/prepend');
+
+var _prepend2 = _interopRequireDefault(_prepend);
+
+var _append = require('utilise/append');
+
+var _append2 = _interopRequireDefault(_append);
+
 var _header = require('utilise/header');
 
 var _header2 = _interopRequireDefault(_header);
@@ -130,8 +138,8 @@ var sqls = {
   push: function push(name, body) {
     var template = 'INSERT INTO {table} ({keys}) VALUES ({values});';
     template = template.replace('{table}', name);
-    template = template.replace('{keys}', Object.keys(body).filter((0, _not2.default)((0, _is2.default)('id'))).join(','));
-    template = template.replace('{values}', Object.keys(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _from2.default)(body)).join(','));
+    template = template.replace('{keys}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _prepend2.default)('`')).map((0, _append2.default)('`')).join(','));
+    template = template.replace('{values}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _from2.default)(body)).map(escape).join(','));
     log(template.grey);
     return template;
   },
@@ -140,7 +148,7 @@ var sqls = {
     var template = 'UPDATE {table} SET {kvpairs} WHERE id = {id};';
     template = template.replace('{table}', name);
     template = template.replace('{id}', body['id']);
-    template = template.replace('{kvpairs}', Object.keys(body).filter((0, _not2.default)((0, _is2.default)('id'))).map(kvpair(body)).join(','));
+    template = template.replace('{kvpairs}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map(kvpair(body)).join(','));
     log(template.grey);
     return template;
   },
@@ -155,7 +163,7 @@ var sqls = {
 
 function kvpair(arr) {
   return function (key) {
-    return key + "=" + escape(arr[key]);
+    return '`' + key + "`=" + escape(arr[key]);
   };
 }
 
