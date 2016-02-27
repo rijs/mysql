@@ -70,35 +70,44 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 function mysql(ripple) {
   log('creating');
   strip(ripple.types['application/data']);
-  (0, _key2.default)('adaptors.mysql', (0, _wrap2.default)(init(ripple)))(ripple);
+  (0, _key2.default)('adaptors.mysql', function (d) {
+    return init(ripple);
+  })(ripple);
   return ripple;
 }
 
-function init(ripple) {
+var init = function init(ripple) {
   return function (config) {
     var con = require('mysql').createPool(config);
     escape = con.escape.bind(con);
 
     return {
-      push: exec('push')(con),
+      add: exec('add')(con),
       update: exec('update')(con),
-      remove: exec('remove')(con),
-      load: load(con)
+      remove: exec('remove')(con)
     };
   };
-}
+};
 
-function exec(type) {
+var exec = function exec(type) {
   return function (con) {
     return function (ripple) {
       return function (res, index, value) {
-        var p = (0, _promise2.default)(),
-            table = (0, _header2.default)('table')(res);
+        var table = (0, _header2.default)('table')(res),
+            p = (0, _promise2.default)();
 
+        if (!index) return load(con)(ripple)(res);
         if (!table) return;
-        if (!_is2.default.obj(value)) return;
-        var sql = sqls[type](table, (0, _key2.default)(res.headers.fields)(value));
 
+        var levels = index.split('.'),
+            record = levels.length === 1 ? (levels.shift(), value) : res.body[levels.shift()],
+            field = levels.shift();
+
+        if (field) record = (0, _key2.default)(['id', field])(record);
+        if (!_is2.default.obj(record) || levels.length || field && !_is2.default.in(res.headers.fields)(field)) return log('cannot generate SQL for', res.name, index);
+
+        var sql = sqls[type](table, (0, _key2.default)(res.headers.fields)(record));
+        log('SQL', sql.grey);
         con.query(sql, function (e, rows) {
           if (e) return err(type, table, 'failed', e);
           log(type.green.bold, table, 'done', rows.insertId ? (0, _str2.default)(rows.insertId).grey : '');
@@ -110,13 +119,16 @@ function exec(type) {
       };
     };
   };
-}
+};
 
-function load(con) {
+var load = function load(con) {
   return function (ripple) {
     return function (res) {
-      var p = (0, _promise2.default)(),
-          table = (0, _header2.default)('table')(res) || res.name;
+      var table = (0, _header2.default)('table')(res) || res.name,
+          p = (0, _promise2.default)();
+
+      if ((0, _key2.default)(loaded)(res)) return;
+      (0, _key2.default)(loaded, true)(res);
 
       con.query('SHOW COLUMNS FROM ' + table, function (e, rows) {
         if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), (0, _key2.default)('headers.table', '')(res);
@@ -132,42 +144,27 @@ function load(con) {
       });
     };
   };
-}
+};
 
 var sqls = {
-  push: function push(name, body) {
-    var template = 'INSERT INTO {table} ({keys}) VALUES ({values});';
-    template = template.replace('{table}', name);
-    template = template.replace('{keys}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _prepend2.default)('`')).map((0, _append2.default)('`')).join(','));
-    template = template.replace('{values}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _from2.default)(body)).map(escape).join(','));
-    log(template.grey);
-    return template;
+  add: function add(name, body) {
+    return 'INSERT INTO {table} ({keys}) VALUES ({values});'.replace('{table}', name).replace('{keys}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _prepend2.default)('`')).map((0, _append2.default)('`')).join(',')).replace('{values}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _from2.default)(body)).map(escape).join(','));
   },
   update: function update(name, body) {
-    // TODO This should produe a minimal statement via diff
-    var template = 'UPDATE {table} SET {kvpairs} WHERE id = {id};';
-    template = template.replace('{table}', name);
-    template = template.replace('{id}', body['id']);
-    template = template.replace('{kvpairs}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map(kvpair(body)).join(','));
-    log(template.grey);
-    return template;
+    return 'UPDATE {table} SET {kvpairs} WHERE id = {id};'.replace('{table}', name).replace('{id}', body['id']).replace('{kvpairs}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map(kvpair(body)).join(','));
   },
   remove: function remove(name, body) {
-    var template = 'DELETE FROM {table} WHERE id = {id};';
-    template = template.replace('{table}', name);
-    template = template.replace('{id}', body['id']);
-    log(template.grey);
-    return template;
+    return 'DELETE FROM {table} WHERE id = {id};'.replace('{table}', name).replace('{id}', body['id']);
   }
 };
 
-function kvpair(arr) {
+var kvpair = function kvpair(arr) {
   return function (key) {
     return '`' + key + "`=" + escape(arr[key]);
   };
-}
+};
 
-function strip(type) {
+var strip = function strip(type) {
   type.to = (0, _proxy2.default)(type.to, function (_ref) {
     var name = _ref.name;
     var body = _ref.body;
@@ -175,18 +172,15 @@ function strip(type) {
 
     var stripped = {};
 
-    (0, _keys2.default)(headers).filter((0, _not2.default)((0, _is2.default)('fields'))).filter((0, _not2.default)((0, _is2.default)('table'))).map(function (header) {
+    (0, _keys2.default)(headers).filter((0, _not2.default)((0, _is2.default)('fields'))).filter((0, _not2.default)((0, _is2.default)('mysql'))).filter((0, _not2.default)((0, _is2.default)('table'))).map(function (header) {
       return stripped[header] = headers[header];
     });
 
-    return {
-      name: name,
-      body: body,
-      headers: stripped
-    };
+    return { name: name, body: body, headers: stripped };
   });
-}
+};
 
-var log = require('utilise/log')('[ri/mysql]'),
-    err = require('utilise/err')('[ri/mysql]'),
-    escape;
+var loaded = 'headers.mysql.loaded',
+    log = require('utilise/log')('[ri/mysql]'),
+    err = require('utilise/err')('[ri/mysql]');
+var escape;

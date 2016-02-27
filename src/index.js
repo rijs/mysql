@@ -4,132 +4,120 @@
 export default function mysql(ripple){
   log('creating')
   strip(ripple.types['application/data'])
-  key('adaptors.mysql', wrap(init(ripple)))(ripple)
+  key('adaptors.mysql', d => init(ripple))(ripple)
   return ripple
 }
 
-function init(ripple) {
-  return config => {
-    var con = require('mysql').createPool(config)
-    escape = con.escape.bind(con)
+const init = ripple => config => {
+  const con = require('mysql').createPool(config)
+  escape = con.escape.bind(con)
+  
+  return {
+    add   : exec('add')(con)
+  , update: exec('update')(con)
+  , remove: exec('remove')(con)
+  }
+}
+
+const exec = type => con => ripple => (res, index, value) => { 
+  const table = header('table')(res)
+      , p = promise()
     
-    return {
-      push: exec('push')(con)
-    , update: exec('update')(con)
-    , remove: exec('remove')(con)
-    , load: load(con)
-    }
-  }
+  if (!index) return load(con)(ripple)(res)
+  if (!table) return
+  
+  var levels = index.split('.')
+    , record = levels.length === 1 
+             ? (levels.shift(), value) 
+             : res.body[levels.shift()]
+    , field  = levels.shift()
+
+  if (field) record = key(['id', field])(record)
+  if (!is.obj(record) 
+  || levels.length 
+  || (field && !is.in(res.headers.fields)(field))) 
+    return log('cannot generate SQL for', res.name, index)
+
+  const sql = sqls[type](table, key(res.headers.fields)(record))
+  log('SQL', sql.grey)
+  con.query(sql, (e, rows) => {
+    if (e) return err(type, table, 'failed', e)
+    log(type.green.bold, table, 'done', rows.insertId ? str(rows.insertId).grey : '')
+  
+    rows.insertId 
+      ? p.resolve(value.id = rows.insertId)
+      : p.resolve()
+  })
+
+  return p
 }
 
-function exec(type) {
-  return (con) => {
-    return (ripple) => {
-      return (res, index, value) => {
-        var p = promise()
-          , table = header('table')(res)
-          
-        if (!table) return
-        if (!is.obj(value)) return
-        var sql = sqls[type](table, key(res.headers.fields)(value))
+const load = con => ripple => res => { 
+  const table = header('table')(res) || res.name
+      , p = promise()
+  
+  if (key(loaded)(res)) return
+  key(loaded, true)(res)
 
-        con.query(sql, function(e, rows) {
-          if (e) return err(type, table, 'failed', e)
-          log(type.green.bold, table, 'done', rows.insertId ? str(rows.insertId).grey : '')
-        
-          rows.insertId 
-            ? p.resolve(value.id = rows.insertId)
-            : p.resolve()
-        })
+  con.query(`SHOW COLUMNS FROM ${table}`, (e, rows) => {
+    if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), key('headers.table', '')(res)
+    if (e) return err(table, e)
+    key('headers.fields', rows.map(key('Field')))(res)
+    key('headers.table', table)(res)
 
-        return p
-      }
-    }
-  }
+    con.query(`SELECT * FROM ${table}`, (e, rows) => {
+      if (e) return err(table, e)
+      log('got', table, rows.length)
+      ripple({ name: res.name, body: rows })
+    })
+
+  })
 }
 
-function load(con){
-  return (ripple) => {
-    return (res) => { 
-      var p = promise(), table = header('table')(res) || res.name
-      
-      con.query(`SHOW COLUMNS FROM ${table}`, function(e, rows) {
-        if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), key('headers.table', '')(res)
-        if (e) return err(table, e)
-        key('headers.fields', rows.map(key('Field')))(res)
-        key('headers.table', table)(res)
-
-        con.query(`SELECT * FROM ${table}`, function(e, rows) {
-          if (e) return err(table, e)
-          log('got', table, rows.length)
-          ripple({ name: res.name, body: rows })
-        })
-
-      })
-
-    }
-  }
-}
-
-var sqls = {
-  push: function(name, body) {
-    var template = 'INSERT INTO {table} ({keys}) VALUES ({values});'
-    template = template.replace('{table}', name)
-    template = template.replace('{keys}', keys(body)
+const sqls = {
+  add(name, body) { return 'INSERT INTO {table} ({keys}) VALUES ({values});'
+    .replace('{table}', name)
+    .replace('{keys}', keys(body)
       .filter(not(is('id')))
       .map(prepend('`'))
       .map(append('`'))
       .join(',')
     )
-    template = template.replace('{values}', keys(body)
+    .replace('{values}', keys(body)
       .filter(not(is('id')))
       .map(from(body))
       .map(escape)
       .join(',')
     )
-    log(template.grey)
-    return template
   }
-, update: function(name, body) {
-    // TODO This should produe a minimal statement via diff
-    var template = 'UPDATE {table} SET {kvpairs} WHERE id = {id};'
-    template = template.replace('{table}', name)
-    template = template.replace('{id}', body['id'])
-    template = template.replace('{kvpairs}', keys(body)
+, update(name, body) { return 'UPDATE {table} SET {kvpairs} WHERE id = {id};'
+    .replace('{table}', name)
+    .replace('{id}', body['id'])
+    .replace('{kvpairs}', keys(body)
       .filter(not(is('id')))
       .map(kvpair(body))
       .join(',')
     )
-    log(template.grey)
-    return template
   }
-, remove: function(name, body) {
-    var template = 'DELETE FROM {table} WHERE id = {id};'
-    template = template.replace('{table}', name)
-    template = template.replace('{id}', body['id'])
-    log(template.grey)
-    return template
+, remove(name, body) { return 'DELETE FROM {table} WHERE id = {id};'
+    .replace('{table}', name)
+    .replace('{id}', body['id'])
   }
 }
 
-function kvpair(arr) {
-  return key => '`' + key + "`=" + escape(arr[key])
-}
+const kvpair = arr => key => '`' + key + "`=" + escape(arr[key])
 
-function strip(type){
+const strip = type => {
   type.to = proxy(type.to, ({ name, body, headers }) => { 
-    var stripped = {}
+    const stripped = {}
 
     keys(headers)
       .filter(not(is('fields')))
+      .filter(not(is('mysql')))
       .filter(not(is('table')))
       .map(header => stripped[header] = headers[header])
 
-    return {
-      name
-    , body
-    , headers: stripped
-    } 
+    return { name, body, headers: stripped } 
   })
 }
 
@@ -147,6 +135,7 @@ import key from 'utilise/key'
 import not from 'utilise/not'
 import str from 'utilise/str'
 import is from 'utilise/is'
-var log = require('utilise/log')('[ri/mysql]')
-  , err = require('utilise/err')('[ri/mysql]')
-  , escape
+const loaded = 'headers.mysql.loaded'
+    , log = require('utilise/log')('[ri/mysql]')
+    , err = require('utilise/err')('[ri/mysql]')
+var escape
