@@ -122,14 +122,12 @@ const strip = type => {
 }
 
 import { default as from } from 'utilise/from'
-import identity from 'utilise/identity'
 import promise from 'utilise/promise'
 import prepend from 'utilise/prepend'
 import append from 'utilise/append'
 import header from 'utilise/header'
 import client from 'utilise/client'
 import proxy from 'utilise/proxy'
-import wrap from 'utilise/wrap'
 import keys from 'utilise/keys'
 import key from 'utilise/key'
 import not from 'utilise/not'
