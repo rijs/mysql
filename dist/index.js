@@ -9,10 +9,6 @@ var _from = require('utilise/from');
 
 var _from2 = _interopRequireDefault(_from);
 
-var _identity = require('utilise/identity');
-
-var _identity2 = _interopRequireDefault(_identity);
-
 var _promise = require('utilise/promise');
 
 var _promise2 = _interopRequireDefault(_promise);
@@ -36,10 +32,6 @@ var _client2 = _interopRequireDefault(_client);
 var _proxy = require('utilise/proxy');
 
 var _proxy2 = _interopRequireDefault(_proxy);
-
-var _wrap = require('utilise/wrap');
-
-var _wrap2 = _interopRequireDefault(_wrap);
 
 var _keys = require('utilise/keys');
 
@@ -93,9 +85,11 @@ var exec = function exec(type) {
   return function (con) {
     return function (ripple) {
       return function (res, index, value) {
-        var table = (0, _header2.default)('table')(res),
+        var table = (0, _header2.default)('mysql.table')(res),
+            xto = (0, _key2.default)('headers.mysql.to')(res),
             p = (0, _promise2.default)();
 
+        if (xto && !xto(res, { key: index, value: value, type: type })) return;
         if (!index) return load(con)(ripple)(res);
         if (!table) return;
 
@@ -104,9 +98,9 @@ var exec = function exec(type) {
             field = levels.shift();
 
         if (field) record = (0, _key2.default)(['id', field])(record);
-        if (!_is2.default.obj(record) || levels.length || field && !_is2.default.in(res.headers.fields)(field)) return log('cannot generate SQL for', res.name, index);
+        if (!_is2.default.obj(record) || levels.length || field && !_is2.default.in(res.headers.mysql.fields)(field)) return log('cannot generate SQL for', res.name, index);
 
-        var sql = sqls[type](table, (0, _key2.default)(res.headers.fields)(record));
+        var sql = sqls[type](table, (0, _key2.default)(res.headers.mysql.fields)(record));
         log('SQL', sql.grey);
         con.query(sql, function (e, rows) {
           if (e) return err(type, table, 'failed', e);
@@ -124,17 +118,17 @@ var exec = function exec(type) {
 var load = function load(con) {
   return function (ripple) {
     return function (res) {
-      var table = (0, _header2.default)('table')(res) || res.name,
+      var table = (0, _header2.default)('mysql.table')(res) || res.name,
           p = (0, _promise2.default)();
 
       if ((0, _key2.default)(loaded)(res)) return;
       (0, _key2.default)(loaded, true)(res);
 
       con.query('SHOW COLUMNS FROM ' + table, function (e, rows) {
-        if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), (0, _key2.default)('headers.table', '')(res);
+        if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), (0, _key2.default)('headers.mysql.table', '')(res);
         if (e) return err(table, e);
-        (0, _key2.default)('headers.fields', rows.map((0, _key2.default)('Field')))(res);
-        (0, _key2.default)('headers.table', table)(res);
+        (0, _key2.default)('headers.mysql.fields', rows.map((0, _key2.default)('Field')))(res);
+        (0, _key2.default)('headers.mysql.table', table)(res);
 
         con.query('SELECT * FROM ' + table, function (e, rows) {
           if (e) return err(table, e);
@@ -172,7 +166,7 @@ var strip = function strip(type) {
 
     var stripped = {};
 
-    (0, _keys2.default)(headers).filter((0, _not2.default)((0, _is2.default)('fields'))).filter((0, _not2.default)((0, _is2.default)('mysql'))).filter((0, _not2.default)((0, _is2.default)('table'))).map(function (header) {
+    (0, _keys2.default)(headers).filter((0, _not2.default)((0, _is2.default)('mysql'))).map(function (header) {
       return stripped[header] = headers[header];
     });
 

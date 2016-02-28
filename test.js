@@ -5,6 +5,7 @@ var core    = require('rijs.core').default
   , db      = require('rijs.db').default
   , update  = require('utilise/update')
   , remove  = require('utilise/remove')
+  , falsy   = require('utilise/falsy')
   , push    = require('utilise/push')
   , pop     = require('utilise/pop')
   , expect  = require('chai').expect
@@ -47,10 +48,13 @@ describe('MySQL', function(){
     ripple('foo', [1,2,3])
     expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
     next(null, [{ Field: 'name' }, { Field: 'id' }])
-    expect(ripple.resources.foo.headers.table).to.be.eql('foo')
+    expect(ripple.resources.foo.headers.mysql.table).to.be.eql('foo')
     expect(sql).to.be.eql('SELECT * FROM foo')
     next(null, [1,2,3,4])
     expect(ripple('foo')).to.be.eql([1,2,3,4])
+    next = null
+    ripple('foo', [1,2,3])
+    expect(next).to.be.not.ok
   })
 
   it('should create correct insert SQL and behaviour', function(){  
@@ -127,7 +131,7 @@ describe('MySQL', function(){
 
     ripple('foo', [])
     next({ code: 'ER_NO_SUCH_TABLE' })
-    expect(ripple.resources.foo.headers.table === '').to.be.ok
+    expect(ripple.resources.foo.headers.mysql.table === '').to.be.ok
     sql = ''
 
     push(record)(ripple('foo'))
@@ -212,20 +216,32 @@ describe('MySQL', function(){
     ripple('foo', [1,2,3])
     expect(sql).to.be.eql('SHOW COLUMNS FROM foo')
     next(null, [{ Field: 'name' }, { Field: 'id' }])
-    expect(ripple.resources.foo.headers.table).to.be.eql('foo')
-    expect(ripple.resources.foo.headers.fields).to.be.eql(['name', 'id'])
+    expect(ripple.resources.foo.headers.mysql.table).to.be.eql('foo')
+    expect(ripple.resources.foo.headers.mysql.fields).to.be.eql(['name', 'id'])
     expect(sql).to.be.eql('SELECT * FROM foo')
     next(null, [1,2,3,4])
     expect(ripple('foo')).to.be.eql([1,2,3,4])
 
-    expect('mysql' in ripple.resources.foo.headers).to.be.ok
-    expect('fields' in ripple.resources.foo.headers).to.be.ok
-    expect('table' in ripple.resources.foo.headers).to.be.ok
+    expect('loaded' in ripple.resources.foo.headers.mysql).to.be.ok
+    expect('fields' in ripple.resources.foo.headers.mysql).to.be.ok
+    expect('table'  in ripple.resources.foo.headers.mysql).to.be.ok
 
     var headers = ripple.types['application/data'].to(ripple.resources.foo).headers
-    expect('fields' in headers).to.not.be.ok
     expect('mysql' in headers).to.not.be.ok
-    expect('table' in headers).to.not.be.ok
+  })
+
+  it('should allow blocking action', function(){  
+    var ripple = db(mysql(data(core())), { db: 'mysql://user:password@host:port/database' })
+      , record = { name: 'foo' }
+
+    ripple('foo', [], { mysql: { to: falsy }})
+    next(null, [{ Field: 'name' }, { Field: 'id' }])
+    next(null, [])
+    next = null
+    push(record)(ripple('foo'))
+    expect(sql).to.be.not.ok
+    expect(next).to.be.not.ok
+    expect(ripple('foo')).to.eql([ { name: 'foo' } ])
   })
 
 })

@@ -20,9 +20,11 @@ const init = ripple => config => {
 }
 
 const exec = type => con => ripple => (res, index, value) => { 
-  const table = header('table')(res)
+  const table = header('mysql.table')(res)
+      , xto = key('headers.mysql.to')(res)
       , p = promise()
-    
+
+  if (xto && !xto(res, { key: index, value, type })) return
   if (!index) return load(con)(ripple)(res)
   if (!table) return
   
@@ -35,10 +37,10 @@ const exec = type => con => ripple => (res, index, value) => {
   if (field) record = key(['id', field])(record)
   if (!is.obj(record) 
   || levels.length 
-  || (field && !is.in(res.headers.fields)(field))) 
+  || (field && !is.in(res.headers.mysql.fields)(field))) 
     return log('cannot generate SQL for', res.name, index)
 
-  const sql = sqls[type](table, key(res.headers.fields)(record))
+  const sql = sqls[type](table, key(res.headers.mysql.fields)(record))
   log('SQL', sql.grey)
   con.query(sql, (e, rows) => {
     if (e) return err(type, table, 'failed', e)
@@ -53,17 +55,17 @@ const exec = type => con => ripple => (res, index, value) => {
 }
 
 const load = con => ripple => res => { 
-  const table = header('table')(res) || res.name
+  const table = header('mysql.table')(res) || res.name
       , p = promise()
   
   if (key(loaded)(res)) return
   key(loaded, true)(res)
 
   con.query(`SHOW COLUMNS FROM ${table}`, (e, rows) => {
-    if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), key('headers.table', '')(res)
+    if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), key('headers.mysql.table', '')(res)
     if (e) return err(table, e)
-    key('headers.fields', rows.map(key('Field')))(res)
-    key('headers.table', table)(res)
+    key('headers.mysql.fields', rows.map(key('Field')))(res)
+    key('headers.mysql.table', table)(res)
 
     con.query(`SELECT * FROM ${table}`, (e, rows) => {
       if (e) return err(table, e)
@@ -112,9 +114,7 @@ const strip = type => {
     const stripped = {}
 
     keys(headers)
-      .filter(not(is('fields')))
       .filter(not(is('mysql')))
-      .filter(not(is('table')))
       .map(header => stripped[header] = headers[header])
 
     return { name, body, headers: stripped } 
