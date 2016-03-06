@@ -29,10 +29,6 @@ var _client = require('utilise/client');
 
 var _client2 = _interopRequireDefault(_client);
 
-var _proxy = require('utilise/proxy');
-
-var _proxy2 = _interopRequireDefault(_proxy);
-
 var _keys = require('utilise/keys');
 
 var _keys2 = _interopRequireDefault(_keys);
@@ -61,7 +57,8 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 // -------------------------------------------
 function mysql(ripple) {
   log('creating');
-  strip(ripple.types['application/data']);
+  var type = ripple.types['application/data'];
+  type.to = strip(type.to);
   (0, _key2.default)('adaptors.mysql', function (d) {
     return init(ripple);
   })(ripple);
@@ -158,20 +155,17 @@ var kvpair = function kvpair(arr) {
   };
 };
 
-var strip = function strip(type) {
-  type.to = (0, _proxy2.default)(type.to, function (_ref) {
-    var name = _ref.name;
-    var body = _ref.body;
-    var headers = _ref.headers;
+var strip = function strip(next) {
+  return function (res, change) {
+    if (change) return next ? next.call(this, res, change) : true;
+    var rep = { name: res.name, body: res.body, headers: {} };
 
-    var stripped = {};
-
-    (0, _keys2.default)(headers).filter((0, _not2.default)((0, _is2.default)('mysql'))).map(function (header) {
-      return stripped[header] = headers[header];
+    (0, _keys2.default)(res.headers).filter((0, _not2.default)((0, _is2.default)('mysql'))).map(function (header) {
+      return rep.headers[header] = res.headers[header];
     });
 
-    return { name: name, body: body, headers: stripped };
-  });
+    return next ? next.call(this, rep, change) : rep;
+  };
 };
 
 var loaded = 'headers.mysql.loaded',

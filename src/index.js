@@ -3,7 +3,8 @@
 // -------------------------------------------
 export default function mysql(ripple){
   log('creating')
-  strip(ripple.types['application/data'])
+  var type = ripple.types['application/data']
+  type.to = strip(type.to)
   key('adaptors.mysql', d => init(ripple))(ripple)
   return ripple
 }
@@ -109,16 +110,15 @@ const sqls = {
 
 const kvpair = arr => key => '`' + key + "`=" + escape(arr[key])
 
-const strip = type => {
-  type.to = proxy(type.to, ({ name, body, headers }) => { 
-    const stripped = {}
+const strip = next => function (res, change) {
+  if (change) return next ? next.call(this, res, change) : true
+  const rep = { name: res.name, body: res.body, headers: {} }
 
-    keys(headers)
-      .filter(not(is('mysql')))
-      .map(header => stripped[header] = headers[header])
+  keys(res.headers)
+    .filter(not(is('mysql')))
+    .map(header => rep.headers[header] = res.headers[header])
 
-    return { name, body, headers: stripped } 
-  })
+  return next ? next.call(this, rep, change) : rep
 }
 
 import { default as from } from 'utilise/from'
@@ -127,7 +127,6 @@ import prepend from 'utilise/prepend'
 import append from 'utilise/append'
 import header from 'utilise/header'
 import client from 'utilise/client'
-import proxy from 'utilise/proxy'
 import keys from 'utilise/keys'
 import key from 'utilise/key'
 import not from 'utilise/not'
