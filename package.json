@@ -25,7 +25,6 @@
     "babel-preset-es2015": "*",
     "browserify": "*",
     "chai": "*",
-    "popper": "*",
     "coveralls": "*",
     "istanbul": "*",
     "mocha": "*",
