@@ -1,6 +1,3 @@
-// -------------------------------------------
-// Loads resources from the /resources folder
-// -------------------------------------------
 export default function mysql(ripple){
   log('creating')
   var type = ripple.types['application/data']
