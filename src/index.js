@@ -9,56 +9,54 @@ export default function mysql(ripple){
 const init = ripple => config => {
   const con = require('mysql').createPool(config)
   escape = con.escape.bind(con)
-  
   return {
-    add   : exec('add')(con)
-  , update: exec('update')(con)
-  , remove: exec('remove')(con)
+    update: crud(ripple, con)('update')
+  , remove: crud(ripple, con)('remove')
+  , add   : crud(ripple, con)('add')
+  , load  : load(ripple, con)
+  // change: change(ripple, con)
   }
 }
 
-const exec = type => con => ripple => (res, index, value) => { 
-  const table = header('mysql.table')(res)
-      , xto = key('headers.mysql.to')(res)
-      , p = promise()
+const crud = (ripple, con) => type => (name, record) => {
+  let res    = ripple.resources[name]
+    , table  = header('mysql.table')(res)
+    , fields = header('mysql.fields')(res)
+    , p      = promise()
+    , sql
 
-  if (xto && !xto(res, { key: index, value, type })) return
-  if (!index) return load(con)(ripple)(res)
-  if (!table) return
-  
-  var levels = index.split('.')
-    , record = levels.length === 1 
-             ? (levels.shift(), value) 
-             : res.body[levels.shift()]
-    , field  = levels.shift()
-
-  if (field) record = key(['id', field])(record)
-  if (!is.obj(record) 
-  || levels.length 
-  || (field && !is.in(res.headers.mysql.fields)(field))) 
-    return log('cannot generate SQL for', res.name, index)
-
-  const sql = sqls[type](table, key(res.headers.mysql.fields)(record))
+  if (!table) return deb('no table', name)
+  if (!(sql = sqls[type](table, key(fields)(record)))) return deb('no sql', name)
   log('SQL', sql.grey)
+
   con.query(sql, (e, rows) => {
     if (e) return err(type, table, 'failed', e)
     log(type.green.bold, table, 'done', rows.insertId ? str(rows.insertId).grey : '')
-  
-    rows.insertId 
-      ? p.resolve(value.id = rows.insertId)
-      : p.resolve()
+    p.resolve(rows.insertId || record.id)
   })
 
   return p
 }
 
-const load = con => ripple => res => { 
-  const table = header('mysql.table')(res) || res.name
+// const change = (ripple, con) => type => (res, change) => {
+//   let levels = (change.key || '').split('.')
+//     , xto    = header('mysql.xto')(res)
+//     , index  = levels[0]
+//     , field  = levels[1]
+//     , record = change.value
+
+//   if (!change.key) return load(ripple, con)(res)
+//   if (!levels.length || levels.length > 2 || (field && !is.in(fields)(field))) return deb('cannot update', name, key)
+//   if (xto && !xto(res, change)) return deb('skipping update', name)
+//   if (field) record = key(['id', field])(res.body[index])
+//   crud(ripple, con)(type)(res.name, record)
+// }
+
+const load = (ripple, con) => name => { 
+  const res = ripple.resources[name]
+      , table = header('mysql.table')(res) || res.name
       , p = promise()
   
-  if (key(loaded)(res)) return
-  key(loaded, true)(res)
-
   con.query(`SHOW COLUMNS FROM ${table}`, (e, rows) => {
     if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), key('headers.mysql.table', '')(res)
     if (e) return err(table, e)
@@ -67,11 +65,12 @@ const load = con => ripple => res => {
 
     con.query(`SELECT * FROM ${table}`, (e, rows) => {
       if (e) return err(table, e)
-      log('got', table, rows.length)
-      ripple({ name: res.name, body: rows })
+      log('got'.green, table, str(rows.length).grey)
+      p.resolve(rows)
     })
-
   })
+
+  return p
 }
 
 const sqls = {
@@ -90,14 +89,15 @@ const sqls = {
       .join(',')
     )
   }
-, update(name, body) { return 'UPDATE {table} SET {kvpairs} WHERE id = {id};'
-    .replace('{table}', name)
-    .replace('{id}', body['id'])
-    .replace('{kvpairs}', keys(body)
-      .filter(not(is('id')))
-      .map(kvpair(body))
-      .join(',')
-    )
+, update(name, body) { return keys(body).length == 1 && ('id' in body) ? ''
+  : 'UPDATE {table} SET {kvpairs} WHERE id = {id};'
+      .replace('{table}', name)
+      .replace('{id}', body['id'])
+      .replace('{kvpairs}', keys(body)
+        .filter(not(is('id')))
+        .map(kvpair(body))
+        .join(',')
+      )
   }
 , remove(name, body) { return 'DELETE FROM {table} WHERE id = {id};'
     .replace('{table}', name)
@@ -123,13 +123,13 @@ import promise from 'utilise/promise'
 import prepend from 'utilise/prepend'
 import append from 'utilise/append'
 import header from 'utilise/header'
-import client from 'utilise/client'
 import keys from 'utilise/keys'
+import noop from 'utilise/noop'
 import key from 'utilise/key'
 import not from 'utilise/not'
 import str from 'utilise/str'
 import is from 'utilise/is'
-const loaded = 'headers.mysql.loaded'
-    , log = require('utilise/log')('[ri/mysql]')
+const log = require('utilise/log')('[ri/mysql]')
     , err = require('utilise/err')('[ri/mysql]')
+    , deb = noop //require('utilise/log')('[ri/mysql]')
 var escape
