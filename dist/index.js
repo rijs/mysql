@@ -9,6 +9,10 @@ var _from = require('utilise/from');
 
 var _from2 = _interopRequireDefault(_from);
 
+var _identity = require('utilise/identity');
+
+var _identity2 = _interopRequireDefault(_identity);
+
 var _promise = require('utilise/promise');
 
 var _promise2 = _interopRequireDefault(_promise);
@@ -24,6 +28,10 @@ var _append2 = _interopRequireDefault(_append);
 var _header = require('utilise/header');
 
 var _header2 = _interopRequireDefault(_header);
+
+var _copy = require('utilise/copy');
+
+var _copy2 = _interopRequireDefault(_copy);
 
 var _keys = require('utilise/keys');
 
@@ -156,15 +164,13 @@ var kvpair = function kvpair(arr) {
 };
 
 var strip = function strip(next) {
-  return function (res, change) {
-    if (change) return next ? next.call(this, res, change) : true;
-    var rep = { name: res.name, body: res.body, headers: {} };
+  return function (req) {
+    var headers = {};
 
-    (0, _keys2.default)(res.headers).filter((0, _not2.default)((0, _is2.default)('mysql'))).map(function (header) {
-      return rep.headers[header] = res.headers[header];
-    });
+    (0, _keys2.default)(req.headers).filter((0, _not2.default)((0, _is2.default)('mysql'))).map((0, _copy2.default)(req.headers, headers));
 
-    return next ? next.call(this, rep, change) : rep;
+    req.headers = headers;
+    return (next || _identity2.default)(req);
   };
 };
 

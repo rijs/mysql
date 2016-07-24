@@ -107,22 +107,24 @@ const sqls = {
 
 const kvpair = arr => key => '`' + key + "`=" + escape(arr[key])
 
-const strip = next => function (res, change) {
-  if (change) return next ? next.call(this, res, change) : true
-  const rep = { name: res.name, body: res.body, headers: {} }
+const strip = next => req => {
+  const headers = {}
 
-  keys(res.headers)
+  keys(req.headers)
     .filter(not(is('mysql')))
-    .map(header => rep.headers[header] = res.headers[header])
+    .map(copy(req.headers, headers))
 
-  return next ? next.call(this, rep, change) : rep
+  req.headers = headers
+  return (next || identity)(req)
 }
 
 import { default as from } from 'utilise/from'
+import identity from 'utilise/identity'
 import promise from 'utilise/promise'
 import prepend from 'utilise/prepend'
 import append from 'utilise/append'
 import header from 'utilise/header'
+import copy from 'utilise/copy'
 import keys from 'utilise/keys'
 import noop from 'utilise/noop'
 import key from 'utilise/key'
