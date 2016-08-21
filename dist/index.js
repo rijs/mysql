@@ -176,5 +176,5 @@ var strip = function strip(next) {
 
 var log = require('utilise/log')('[ri/mysql]'),
     err = require('utilise/err')('[ri/mysql]'),
-    deb = _noop2.default; //require('utilise/log')('[ri/mysql]')
+    deb = require('utilise/deb')('[ri/mysql]');
 var escape;

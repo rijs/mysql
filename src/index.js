@@ -133,5 +133,5 @@ import str from 'utilise/str'
 import is from 'utilise/is'
 const log = require('utilise/log')('[ri/mysql]')
     , err = require('utilise/err')('[ri/mysql]')
-    , deb = noop //require('utilise/log')('[ri/mysql]')
+    , deb = require('utilise/deb')('[ri/mysql]')
 var escape
