@@ -1,68 +1,51 @@
-export default function mysql(ripple){
+export default function mysql(config){
   log('creating')
-  var type = ripple.types['application/data']
-  type.to = strip(type.to)
-  key('adaptors.mysql', d => init(ripple))(ripple)
-  return ripple
-}
 
-const init = ripple => config => {
-  const con = require('mysql').createPool(config)
+  config = {
+    type    : (config = config.split('://')).shift()
+  , user    : (config = config.join('://').split(':')).shift()
+  , database: (config = config.join(':').split('/')).pop()
+  , port    : (config = config.join('/').split(':')).pop()
+  , host    : (config = config.join(':').split('@')).pop()
+  , password: config.join('@')
+  }
+
+  const con = createPool(config)
   escape = con.escape.bind(con)
+
   return {
-    update: crud(ripple, con)('update')
-  , remove: crud(ripple, con)('remove')
-  , add   : crud(ripple, con)('add')
-  , load  : load(ripple, con)
-  // change: change(ripple, con)
+    update: crud(con, 'update')
+  , remove: crud(con, 'remove')
+  , add   : crud(con, 'add')
+  , load  : load(con)
   }
 }
 
-const crud = (ripple, con) => type => (name, record) => {
-  let res    = ripple.resources[name]
-    , table  = header('mysql.table')(res)
-    , fields = header('mysql.fields')(res)
-    , p      = promise()
+const crud = (con, type) => (table, body) => {
+  let p = promise()
+    , mask = fields[table]
     , sql
 
-  if (!table) return deb('no table', name)
-  if (!(sql = sqls[type](table, key(fields)(record)))) return deb('no sql', name)
+  if (!(sql = sqls[type](table, key(mask)(body)))) return deb('no sql', name)
   log('SQL', sql.grey)
 
   con.query(sql, (e, rows) => {
     if (e) return err(type, table, 'failed', e)
     log(type.green.bold, table, 'done', rows.insertId ? str(rows.insertId).grey : '')
-    p.resolve(rows.insertId || record.id)
+    p.resolve(rows.insertId || body.id)
   })
 
   return p
 }
 
-// const change = (ripple, con) => type => (res, change) => {
-//   let levels = (change.key || '').split('.')
-//     , xto    = header('mysql.xto')(res)
-//     , index  = levels[0]
-//     , field  = levels[1]
-//     , record = change.value
-
-//   if (!change.key) return load(ripple, con)(res)
-//   if (!levels.length || levels.length > 2 || (field && !is.in(fields)(field))) return deb('cannot update', name, key)
-//   if (xto && !xto(res, change)) return deb('skipping update', name)
-//   if (field) record = key(['id', field])(res.body[index])
-//   crud(ripple, con)(type)(res.name, record)
-// }
-
-const load = (ripple, con) => name => { 
-  const res = ripple.resources[name]
-      , table = header('mysql.table')(res) || res.name
-      , p = promise()
+const load = con => table => { 
+  const p = promise()
   
   con.query(`SHOW COLUMNS FROM ${table}`, (e, rows) => {
-    if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table), key('headers.mysql.table', '')(res)
+    if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table)
     if (e) return err(table, e)
-    key('headers.mysql.fields', rows.map(key('Field')))(res)
-    key('headers.mysql.table', table)(res)
-
+    key(table, rows.map(key('Field')))(fields)
+  
     con.query(`SELECT * FROM ${table}`, (e, rows) => {
       if (e) return err(table, e)
       log('got'.green, table, str(rows.length).grey)
@@ -107,31 +90,17 @@ const sqls = {
 
 const kvpair = arr => key => '`' + key + "`=" + escape(arr[key])
 
-const strip = next => req => {
-  const headers = {}
-
-  keys(req.headers)
-    .filter(not(is('mysql')))
-    .map(copy(req.headers, headers))
-
-  req.headers = headers
-  return (next || identity)(req)
-}
-
 import { default as from } from 'utilise/from'
-import identity from 'utilise/identity'
 import promise from 'utilise/promise'
 import prepend from 'utilise/prepend'
 import append from 'utilise/append'
-import header from 'utilise/header'
-import copy from 'utilise/copy'
 import keys from 'utilise/keys'
-import noop from 'utilise/noop'
-import key from 'utilise/key'
 import not from 'utilise/not'
 import str from 'utilise/str'
 import is from 'utilise/is'
-const log = require('utilise/log')('[ri/mysql]')
-    , err = require('utilise/err')('[ri/mysql]')
-    , deb = require('utilise/deb')('[ri/mysql]')
+import { createPool } from 'mysql'
+const log = require('utilise/log')('[mysql]')
+    , err = require('utilise/err')('[mysql]')
+    , deb = require('utilise/deb')('[mysql]')
+    , fields = {}
 var escape
