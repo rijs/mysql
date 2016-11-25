@@ -1,14 +1,14 @@
-export default function mysql(config){
+export default function mysql(config, opts = {}){
   log('creating')
 
-  config = {
+  config = extend(opts)({
     type    : (config = config.split('://')).shift()
   , user    : (config = config.join('://').split(':')).shift()
   , database: (config = config.join(':').split('/')).pop()
   , port    : (config = config.join('/').split(':')).pop()
   , host    : (config = config.join(':').split('@')).pop()
   , password: config.join('@')
-  }
+  })
 
   const con = createPool(config)
   escape = con.escape.bind(con)
@@ -93,6 +93,7 @@ const kvpair = arr => key => '`' + key + "`=" + escape(arr[key])
 import { default as from } from 'utilise/from'
 import promise from 'utilise/promise'
 import prepend from 'utilise/prepend'
+import extend from 'utilise/extend'
 import append from 'utilise/append'
 import keys from 'utilise/keys'
 import not from 'utilise/not'
