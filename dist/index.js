@@ -17,6 +17,10 @@ var _prepend = require('utilise/prepend');
 
 var _prepend2 = _interopRequireDefault(_prepend);
 
+var _extend = require('utilise/extend');
+
+var _extend2 = _interopRequireDefault(_extend);
+
 var _append = require('utilise/append');
 
 var _append2 = _interopRequireDefault(_append);
@@ -43,16 +47,18 @@ var _mysql = require('mysql');
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function mysql(config) {
+  var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
+
   log('creating');
 
-  config = {
+  config = (0, _extend2.default)(opts)({
     type: (config = config.split('://')).shift(),
     user: (config = config.join('://').split(':')).shift(),
     database: (config = config.join(':').split('/')).pop(),
     port: (config = config.join('/').split(':')).pop(),
     host: (config = config.join(':').split('@')).pop(),
     password: config.join('@')
-  };
+  });
 
   var con = (0, _mysql.createPool)(config);
   escape = con.escape.bind(con);
