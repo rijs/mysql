@@ -1,51 +1,51 @@
-"use strict";
+'use strict';
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = mysql;
 
-var _from = require("utilise/from");
+var _from = require('utilise/from');
 
 var _from2 = _interopRequireDefault(_from);
 
-var _promise = require("utilise/promise");
+var _promise = require('utilise/promise');
 
 var _promise2 = _interopRequireDefault(_promise);
 
-var _prepend = require("utilise/prepend");
+var _prepend = require('utilise/prepend');
 
 var _prepend2 = _interopRequireDefault(_prepend);
 
-var _extend = require("utilise/extend");
+var _extend = require('utilise/extend');
 
 var _extend2 = _interopRequireDefault(_extend);
 
-var _append = require("utilise/append");
+var _append = require('utilise/append');
 
 var _append2 = _interopRequireDefault(_append);
 
-var _keys = require("utilise/keys");
+var _keys = require('utilise/keys');
 
 var _keys2 = _interopRequireDefault(_keys);
 
-var _key = require("utilise/key");
+var _key = require('utilise/key');
 
 var _key2 = _interopRequireDefault(_key);
 
-var _not = require("utilise/not");
+var _not = require('utilise/not');
 
 var _not2 = _interopRequireDefault(_not);
 
-var _str = require("utilise/str");
+var _str = require('utilise/str');
 
 var _str2 = _interopRequireDefault(_str);
 
-var _is = require("utilise/is");
+var _is = require('utilise/is');
 
 var _is2 = _interopRequireDefault(_is);
 
-var _mysql = require("mysql");
+var _mysql = require('mysql');
 
 /* istanbul ignore next */
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -54,8 +54,7 @@ function mysql(config) {
   var opts = arguments.length <= 1 || arguments[1] === undefined ? {} : arguments[1];
 
   log('creating');
-  console.log("config", config);
-  console.log("opts", opts);
+
   config = (0, _extend2.default)(opts)({
     type: (config = config.split('://')).shift(),
     user: (config = config.join('://').split(':')).shift(),
@@ -99,12 +98,12 @@ var load = function load(con) {
   return function (table, id) {
     var p = (0, _promise2.default)();
 
-    con.query("SHOW COLUMNS FROM " + table, function (e, rows) {
+    con.query('SHOW COLUMNS FROM ' + table, function (e, rows) {
       if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table);
       if (e) return err(table, e);
       (0, _key2.default)(table, rows.map((0, _key2.default)('Field')))(fields);
 
-      con.query(id ? "SELECT * FROM " + table + " WHERE id = " + id : "SELECT * FROM " + table, function (e, rows) {
+      con.query(id ? 'SELECT * FROM ' + table + ' WHERE id = ' + id : 'SELECT * FROM ' + table, function (e, rows) {
         if (e) return err(table, e);
         log('got'.green, table, (0, _str2.default)(rows.length).grey);
         p.resolve(id ? rows[0] : rows);
