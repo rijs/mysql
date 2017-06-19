@@ -34,13 +34,13 @@ describe('MySQL', function(){
     mockery.disable()
   })
 
-  it('should create connection hooks', function(){  
-    var ripple = db(mysql(data(core())), { db: { mysql: 'mysql://user:password@host:port/database' }})
-    expect(keys(ripple.connections)).to.be.eql(['mysql'])
-    expect(ripple.connections.mysql.add).to.be.a('function')
-    expect(ripple.connections.mysql.update).to.be.a('function')
-    expect(ripple.connections.mysql.remove).to.be.a('function')
-  })
+  // it('should create connection hooks', function(){  
+  //   var ripple = db(mysql(data(core())), { db: { mysql: 'mysql://user:password@host:port/database' }})
+  //   expect(keys(ripple.connections)).to.be.eql(['mysql'])
+  //   expect(ripple.connections.mysql.add).to.be.a('function')
+  //   expect(ripple.connections.mysql.update).to.be.a('function')
+  //   expect(ripple.connections.mysql.remove).to.be.a('function')
+  // })
 
   // it('should create correct load SQL and behaviour', function(){  
   //   var ripple = db(mysql(data(core())), { db: { mysql: 'mysql://user:password@host:port/database' }})
