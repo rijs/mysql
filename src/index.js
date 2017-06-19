@@ -38,7 +38,7 @@ const crud = (con, type) => (table, body) => {
   return p
 }
 
-const load = con => table => { 
+const load = con => (table, id) => { 
   const p = promise()
   
   con.query(`SHOW COLUMNS FROM ${table}`, (e, rows) => {
@@ -46,10 +46,10 @@ const load = con => table => {
     if (e) return err(table, e)
     key(table, rows.map(key('Field')))(fields)
   
-    con.query(`SELECT * FROM ${table}`, (e, rows) => {
+    con.query(id ? `SELECT * FROM ${table} WHERE id = ${id}` : `SELECT * FROM ${table}`, (e, rows) => {
       if (e) return err(table, e)
       log('got'.green, table, str(rows.length).grey)
-      p.resolve(rows)
+      p.resolve(id ? rows[0] : rows)
     })
   })
 
@@ -96,6 +96,7 @@ import prepend from 'utilise/prepend'
 import extend from 'utilise/extend'
 import append from 'utilise/append'
 import keys from 'utilise/keys'
+import key from 'utilise/key'
 import not from 'utilise/not'
 import str from 'utilise/str'
 import is from 'utilise/is'

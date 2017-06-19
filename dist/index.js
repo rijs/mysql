@@ -29,6 +29,10 @@ var _keys = require('utilise/keys');
 
 var _keys2 = _interopRequireDefault(_keys);
 
+var _key = require('utilise/key');
+
+var _key2 = _interopRequireDefault(_key);
+
 var _not = require('utilise/not');
 
 var _not2 = _interopRequireDefault(_not);
@@ -77,7 +81,7 @@ var crud = function crud(con, type) {
         mask = fields[table],
         sql = void 0;
 
-    if (!(sql = sqls[type](table, key(mask)(body)))) return deb('no sql', name);
+    if (!(sql = sqls[type](table, (0, _key2.default)(mask)(body)))) return deb('no sql', name);
     log('SQL', sql.grey);
 
     con.query(sql, function (e, rows) {
@@ -91,18 +95,18 @@ var crud = function crud(con, type) {
 };
 
 var load = function load(con) {
-  return function (table) {
+  return function (table, id) {
     var p = (0, _promise2.default)();
 
     con.query('SHOW COLUMNS FROM ' + table, function (e, rows) {
       if (e && e.code == 'ER_NO_SUCH_TABLE') return log('no table', table);
       if (e) return err(table, e);
-      key(table, rows.map(key('Field')))(fields);
+      (0, _key2.default)(table, rows.map((0, _key2.default)('Field')))(fields);
 
-      con.query('SELECT * FROM ' + table, function (e, rows) {
+      con.query(id ? 'SELECT * FROM ' + table + ' WHERE id = ' + id : 'SELECT * FROM ' + table, function (e, rows) {
         if (e) return err(table, e);
         log('got'.green, table, (0, _str2.default)(rows.length).grey);
-        p.resolve(rows);
+        p.resolve(id ? rows[0] : rows);
       });
     });
 
