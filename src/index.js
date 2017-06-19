@@ -1,7 +1,6 @@
 export default function mysql(config, opts = {}){
   log('creating')
-console.log("config", config)
-console.log("opts", opts)
+
   config = extend(opts)({
     type    : (config = config.split('://')).shift()
   , user    : (config = config.join('://').split(':')).shift()
