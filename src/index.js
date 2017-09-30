@@ -18,8 +18,18 @@ export default function mysql(config, opts = {}){
   , remove: crud(con, 'remove')
   , add   : crud(con, 'add')
   , load  : load(con)
+  , query : query(con)
   }
 }
+
+const query = con => (sql, params = []) => new Promise((resolve, reject) => {
+  log('SQL (query)', sql.grey, params)
+
+  con.query(sql, params, (e, results) => e
+    ? reject(err(sql, 'failed', e))
+    : resolve(results)
+  )
+})
 
 const crud = (con, type) => (table, body) => {
   let p = promise()
