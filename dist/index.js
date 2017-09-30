@@ -71,9 +71,23 @@ function mysql(config) {
     update: crud(con, 'update'),
     remove: crud(con, 'remove'),
     add: crud(con, 'add'),
-    load: load(con)
+    load: load(con),
+    query: query(con)
   };
 }
+
+var query = function query(con) {
+  return function (sql) {
+    var params = arguments.length <= 1 || arguments[1] === undefined ? [] : arguments[1];
+    return new Promise(function (resolve, reject) {
+      log('SQL (query)', sql.grey, params);
+
+      con.query(sql, params, function (e, results) {
+        return e ? reject(err(sql, 'failed', e)) : resolve(results);
+      });
+    });
+  };
+};
 
 var crud = function crud(con, type) {
   return function (table, body) {
