@@ -99,7 +99,7 @@ var crud = function crud(con, type) {
     log('SQL', sql.grey);
 
     con.query(sql, function (e, rows) {
-      if (e) return err(type, table, 'failed', e);
+      if (e) return err(type, table, 'failed', p.reject(e));
       log(type.green.bold, table, 'done', rows.insertId ? (0, _str2.default)(rows.insertId).grey : '');
       p.resolve(rows.insertId || body.id);
     });

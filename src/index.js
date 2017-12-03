@@ -40,7 +40,7 @@ const crud = (con, type) => (table, body) => {
   log('SQL', sql.grey)
 
   con.query(sql, (e, rows) => {
-    if (e) return err(type, table, 'failed', e)
+    if (e) return err(type, table, 'failed', p.reject(e))
     log(type.green.bold, table, 'done', rows.insertId ? str(rows.insertId).grey : '')
     p.resolve(rows.insertId || body.id)
   })
