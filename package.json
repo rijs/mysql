@@ -1,6 +1,6 @@
 {
   "name": "rijs.mysql",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "main": "dist",
   "browser": "./node_modules/utilise/identity.js",
   "author": "Pedram Emrouznejad (https://github.com/pemrouz)",
