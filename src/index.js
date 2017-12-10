@@ -17,6 +17,7 @@ export default function mysql(config, opts = {}){
     update: crud(con, 'update')
   , remove: crud(con, 'remove')
   , add   : crud(con, 'add')
+  , addID   : crud(con, 'addID')
   , load  : load(con)
   , query : query(con)
   }
@@ -77,6 +78,19 @@ const sqls = {
     )
     .replace('{values}', keys(body)
       .filter(not(is('id')))
+      .map(from(body))
+      .map(escape)
+      .join(',')
+    )
+  }
+, addID(name, body) { return 'INSERT INTO {table} ({keys}) VALUES ({values});'
+    .replace('{table}', name)
+    .replace('{keys}', keys(body)
+      .map(prepend('`'))
+      .map(append('`'))
+      .join(',')
+    )
+    .replace('{values}', keys(body)
       .map(from(body))
       .map(escape)
       .join(',')

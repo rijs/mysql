@@ -71,6 +71,7 @@ function mysql(config) {
     update: crud(con, 'update'),
     remove: crud(con, 'remove'),
     add: crud(con, 'add'),
+    addID: crud(con, 'addID'),
     load: load(con),
     query: query(con)
   };
@@ -131,6 +132,9 @@ var load = function load(con) {
 var sqls = {
   add: function add(name, body) {
     return 'INSERT INTO {table} ({keys}) VALUES ({values});'.replace('{table}', name).replace('{keys}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _prepend2.default)('`')).map((0, _append2.default)('`')).join(',')).replace('{values}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map((0, _from2.default)(body)).map(escape).join(','));
+  },
+  addID: function addID(name, body) {
+    return 'INSERT INTO {table} ({keys}) VALUES ({values});'.replace('{table}', name).replace('{keys}', (0, _keys2.default)(body).map((0, _prepend2.default)('`')).map((0, _append2.default)('`')).join(',')).replace('{values}', (0, _keys2.default)(body).map((0, _from2.default)(body)).map(escape).join(','));
   },
   update: function update(name, body) {
     return (0, _keys2.default)(body).length == 1 && 'id' in body ? '' : 'UPDATE {table} SET {kvpairs} WHERE id = {id};'.replace('{table}', name).replace('{id}', body['id']).replace('{kvpairs}', (0, _keys2.default)(body).filter((0, _not2.default)((0, _is2.default)('id'))).map(kvpair(body)).join(','));
