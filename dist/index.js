@@ -47,7 +47,6 @@ var _is2 = _interopRequireDefault(_is);
 
 var _mysql = require('mysql');
 
-/* istanbul ignore next */
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function mysql(config) {
@@ -96,7 +95,7 @@ var crud = function crud(con, type) {
         mask = fields[table],
         sql = void 0;
 
-    if (!(sql = sqls[type](table, (0, _key2.default)(mask)(body)))) return deb('no sql', name);
+    if (!(sql = sqls[type](table, (0, _key2.default)(mask)(body)))) return deb('no sql', table);
     log('SQL', sql.grey);
 
     con.query(sql, function (e, rows) {

@@ -37,7 +37,7 @@ const crud = (con, type) => (table, body) => {
     , mask = fields[table]
     , sql
 
-  if (!(sql = sqls[type](table, key(mask)(body)))) return deb('no sql', name)
+  if (!(sql = sqls[type](table, key(mask)(body)))) return deb('no sql', table)
   log('SQL', sql.grey)
 
   con.query(sql, (e, rows) => {
