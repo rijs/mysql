@@ -47,6 +47,7 @@ var _is2 = _interopRequireDefault(_is);
 
 var _mysql = require('mysql');
 
+/* istanbul ignore next */
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 function mysql(config) {
